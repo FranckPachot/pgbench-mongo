@@ -19,5 +19,14 @@ m "i: true, s:10"
 
 m "S:true, c: 32, T: 120, s: 10, 'verbose-errors':true"
 
+
+# equivalent to pgbench -N -c 32 -T 120 -s 10
+
+m "N:true, c: 32, T: 120, s: 10, 'verbose-errors':true"
+
+# equivalent to pgbench -c 32 -T 120 -s 10
+
+m "'max-tries': 100, c: 32, T: 120, s: 10, 'verbose-errors':false"
+
 ```
 
