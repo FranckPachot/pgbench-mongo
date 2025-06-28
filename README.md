@@ -7,8 +7,8 @@ Start MongoDB and Benchmark
 docker compose up -d 
 
 function m() {
-docker compose exec -it mongo mongosh --eval "
- load('/pgbench-mongo.js'); run({ $* }).then(() => quit())" "mongodb://pgbench-mongo-mongo-1:27017/test?replicaSet=rs0&readPreference=primary"
+docker compose exec -it mongo-1 mongosh --eval "
+ load('/pgbench-mongo.js'); run({ $* }).then(() => quit())" "mongodb://mongo-1:27017/test?replicaSet=rs0&readPreference=primary"
 }
 
 # equivalent to pgbench -i -s 10

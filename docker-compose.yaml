@@ -1,30 +1,51 @@
-services:
+services:  
 
-  mongo:
-    image: mongodb/mongodb-community-server:latest
-    expose:
-      - "27017:20017"
-    #ports:
-    #  - 27017-27100:27017
-    volumes:
-      - ./pgbench-mongo.js:/pgbench-mongo.js:ro
-      - /data/db
-    command: mongod --bind_ip_all --replSet rs0
-    deploy:
-      replicas: 3
-
-  init-replica-set:
-    image: mongodb/mongodb-community-server:latest
-    depends_on:
-      mongo:
-        condition: service_started
-    entrypoint: |
-      bash -xc '
-        mongosh --host mongo --eval "
-         rs.initiate( {_id: \"rs0\", members: [
-          {_id: 0, priority: 3, host: \"${COMPOSE_PROJECT_NAME}-mongo-1:27017\"},
-          {_id: 1, priority: 2, host: \"${COMPOSE_PROJECT_NAME}-mongo-2:27017\"},
-          {_id: 2, priority: 1, host: \"${COMPOSE_PROJECT_NAME}-mongo-3:27017\"}]
-         });
-        "
-      '
+  mongo-1:  
+    image: mongodb/mongodb-community-server:latest  
+    ports:  
+      - "27017:27017"  
+    volumes:  
+      - ./pgbench-mongo.js:/pgbench-mongo.js:ro  
+      - mongo-data-1:/data/db  
+    command: mongod --bind_ip_all --replSet rs0  
+  
+  mongo-2:  
+    image: mongodb/mongodb-community-server:latest  
+    ports:  
+      - "27018:27017"  
+    volumes:  
+      - ./pgbench-mongo.js:/pgbench-mongo.js:ro  
+      - mongo-data-2:/data/db  
+    command: mongod --bind_ip_all --replSet rs0  
+  
+  mongo-3:  
+    image: mongodb/mongodb-community-server:latest  
+    ports:  
+      - "27019:27017"  
+    volumes:  
+      - ./pgbench-mongo.js:/pgbench-mongo.js:ro  
+      - mongo-data-3:/data/db  
+    command: mongod --bind_ip_all --replSet rs0  
+  
+  init-replica-set:  
+    image: mongodb/mongodb-community-server:latest  
+    depends_on:  
+      - mongo-1  
+      - mongo-2  
+      - mongo-3  
+    entrypoint: |  
+      bash -xc '  
+        sleep 10  
+        mongosh --host mongo-1 --eval "  
+         rs.initiate( {_id: \"rs0\", members: [  
+          {_id: 0, priority: 3, host: \"mongo-1:27017\"},  
+          {_id: 1, priority: 2, host: \"mongo-2:27017\"},  
+          {_id: 2, priority: 1, host: \"mongo-3:27017\"}]  
+         });  
+        "  
+      '  
+  
+volumes:  
+  mongo-data-1:  
+  mongo-data-2:  
+  mongo-data-3:  
