@@ -1,0 +1,30 @@
+services:
+
+  mongo:
+    image: mongodb/mongodb-community-server:latest
+    expose:
+      - "27017:20017"
+    #ports:
+    #  - 27017-27100:27017
+    volumes:
+      - ./pgbench-mongo.js:/pgbench-mongo.js:ro
+      - /data/db
+    command: mongod --bind_ip_all --replSet rs0
+    deploy:
+      replicas: 3
+
+  init-replica-set:
+    image: mongodb/mongodb-community-server:latest
+    depends_on:
+      mongo:
+        condition: service_started
+    entrypoint: |
+      bash -xc '
+        mongosh --host mongo --eval "
+         rs.initiate( {_id: \"rs0\", members: [
+          {_id: 0, priority: 3, host: \"${COMPOSE_PROJECT_NAME}-mongo-1:27017\"},
+          {_id: 1, priority: 2, host: \"${COMPOSE_PROJECT_NAME}-mongo-2:27017\"},
+          {_id: 2, priority: 1, host: \"${COMPOSE_PROJECT_NAME}-mongo-3:27017\"}]
+         });
+        "
+      '
