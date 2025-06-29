@@ -16,6 +16,9 @@ function m() {
  docker compose exec -it mongo-1 mongosh --eval "
   load('/pgbench-mongo.js'); run({ $* }).then(() => quit())" "mongodb://mongo-1:27017/test?replicaSet=rs0&readPreference=primary"
 }
+function t(){ docker compose exec -it mongo-1 mongotop $* ; }
+function s(){ docker compose exec -it mongo-1 mongostat $* ; }
+
 
 {
 
@@ -23,18 +26,18 @@ function m() {
 
 m "i: true, s:10"
 
-# equivalent to pgbench -S -c 32 -T 120 -s 10
+# equivalent to pgbench -S -c 8 -T 120 -s 10
 
-m "S:true, c: 32, T: 120, s: 10, 'verbose-errors':true"
+m "S:true, c: 8, T: 120, s: 10, 'verbose-errors':true"
 
 
-# equivalent to pgbench -N -c 32 -T 120 -s 10
+# equivalent to pgbench -N -c 8 -T 120 -s 10
 
-m "N:true, c: 32, T: 120, s: 10, 'verbose-errors':true"
+m "N:true, c: 8, T: 120, s: 10, 'verbose-errors':true"
 
-# equivalent to pgbench -c 32 -T 120 -s 10
+# equivalent to pgbench -c 8 -T 120 -s 10
 
-m "'max-tries': 100, c: 32, T: 120, s: 10, 'verbose-errors':false"
+m "'max-tries': 100, c: 8, T: 120, s: 10, 'verbose-errors':false"
 
  } 2>&1 | tee bench.log
 
@@ -89,9 +92,9 @@ function p() {
 
 {
 p -i -s 10
-p -S -c 32 -T 120 -s 10
-p -N -c 32 -T 120 -s 10
-p -c 32 -T 120 -s 10
+p -S -c 8 -T 120 -s 10
+p -N -c 8 -T 120 -s 10
+p -c 8 -T 120 -s 10
  } 2>&1 | tee pgbench.log
 
 ```
