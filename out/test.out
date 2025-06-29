@@ -1,0 +1,59 @@
+(no comparisons - was not run on the same machine)
+
+ === running pgbench -i -s 10 ===
+ done in 3.46 s (drop tables 0.02 s, create tables 0.01 s, client-side generate 2.58 s, vacuum 0.13 s, primary keys 0.72 s).
+
+ === running pgbench-mongo i: true, s:10 === 
+  done in 15.22 s (drop tables 0.02 s, create tables 0.08 s, client-side generate 13.43 s, vacuum 0.00 s, primary keys 1.70 s).
+
+ === running pgbench -S -c 32 -T 120 -s 10 ===
+  number of transactions actually processed: 1813040
+number of failed transactions: 0 (0.000%)
+latency average = 2.113 ms
+initial connection time = 298.843 ms
+tps = 15142.414060 (without initial connection time)
+
+ === running pgbench-mongo S:true, c: 32, T: 120, s: 10, 'verbose-errors':true === 
+ number of transactions actually processed: 85458
+number of failed transactions: 0 (0.000%)
+latency average = 35.331 ms
+latency stddev = 25.597 ms
+latency min = 7.000 ms
+latency max = 208.000 ms
+initial connection time = 0.000 ms
+tps = 712.043194 (without initial connection time)
+
+ === running pgbench -N -c 32 -T 120 -s 10 ===
+number of transactions actually processed: 269914
+number of failed transactions: 0 (0.000%)
+latency average = 14.218 ms
+initial connection time = 282.312 ms
+tps = 2250.608492 (without initial connection time)
+ === running pgbench-mongo N:true, c: 32, T: 120, s: 10, 'verbose-errors':true === 
+number of transactions actually processed: 59010
+number of failed transactions: 0 (0.000%)
+latency average = 56.132 ms
+latency stddev = 22.934 ms
+latency min = 15.000 ms
+latency max = 188.000 ms
+initial connection time = 0.000 ms
+tps = 491.647573 (without initial connection time)
+
+ === running pgbench -c 32 -T 120 -s 10 ===
+ number of transactions actually processed: 177733
+number of failed transactions: 0 (0.000%)
+latency average = 21.575 ms
+initial connection time = 275.462 ms
+tps = 1483.224648 (without initial connection time)
+ === running pgbench-mongo 'max-tries': 100, c: 32, T: 120, s: 10, 'verbose-errors':false === 
+ number of transactions actually processed: 6642
+number of failed transactions: 0 (0.000%)
+number of transactions retried: 5078 (76.453%)
+total number of retries: 29678
+latency average = 83.530 ms
+latency stddev = 41.404 ms
+latency min = 6.000 ms
+latency max = 417.000 ms
+initial connection time = 0.000 ms
+tps = 55.110270 (without initial connection time)
+
