@@ -73,10 +73,13 @@ function calculateBackoffDelay(attempt, baseDelay = 1) {
 }  
   
 // Execute transaction based on script type  
-async function executeTransaction(aid, bid, tid, delta, scriptType, options) {  
+async function executeTransaction(aid, bid, tid, delta, scriptType, options, session) {  
     const txnStart = new Date();  
-    const session = db.getMongo().startSession();  
-      
+    let ownsSession = false;  
+    if (!session) {  
+      session = db.getMongo().startSession();  
+      ownsSession = true;  
+    }      
     try {  
         session.startTransaction({  
             readConcern: { level: "snapshot" },  
@@ -196,7 +199,7 @@ async function executeTransaction(aid, bid, tid, delta, scriptType, options) {
         throw error;  
     } finally {  
         try {  
-            session.endSession();  
+            if (ownsSession) { session.endSession();  }
         } catch (sessionError) {  
             // Ignore session cleanup errors  
         }  
@@ -208,43 +211,43 @@ const BuiltinScripts = {
     'tpcb-like': {  
         name: 'tpcb-like',  
         desc: '<builtin: TPC-B (sort of)>',  
-        script: async function(scale, clientId, transactionId, options) {  
+        script: async function(scale, clientId, transactionId, options, session) {  
             const prng = new SimplePRNG(options.seed + clientId * 1000 + transactionId);  
             const aid = prng.range(1, naccounts * scale);  
             const bid = prng.range(1, nbranches * scale);  
             const tid = prng.range(1, ntellers * scale);  
             const delta = prng.range(-5000, 5000);  
               
-            return await executeTransaction(aid, bid, tid, delta, 'tpcb-like', options);  
+            return await executeTransaction(aid, bid, tid, delta, 'tpcb-like', options, session);  
         }  
     },  
     'simple-update': {  
         name: 'simple-update',  
         desc: '<builtin: simple update>',  
-        script: async function(scale, clientId, transactionId, options) {  
+        script: async function(scale, clientId, transactionId, options, session) {  
             const prng = new SimplePRNG(options.seed + clientId * 1000 + transactionId);  
             const aid = prng.range(1, naccounts * scale);  
             const bid = prng.range(1, nbranches * scale);  
             const tid = prng.range(1, ntellers * scale);  
             const delta = prng.range(-5000, 5000);  
               
-            return await executeTransaction(aid, bid, tid, delta, 'simple-update', options);  
+            return await executeTransaction(aid, bid, tid, delta, 'simple-update', options, session);  
         }  
     },  
     'select-only': {  
         name: 'select-only',  
         desc: '<builtin: select only>',  
-        script: async function(scale, clientId, transactionId, options) {  
+        script: async function(scale, clientId, transactionId, options, session) {  
             const prng = new SimplePRNG(options.seed + clientId * 1000 + transactionId);  
             const aid = prng.range(1, naccounts * scale);  
               
-            return await executeTransaction(aid, null, null, null, 'select-only', options);  
+            return await executeTransaction(aid, null, null, null, 'select-only', options, session);  
         }  
     }  
 };  
   
 // Transaction execution with retry logic  
-async function executeWithRetry(scriptType, scale, clientId, transactionId, options) {  
+async function executeWithRetry(scriptType, scale, clientId, transactionId, options, session) {  
     const {  
         maxTries = 1,  
         latencyLimit = 0,  
@@ -270,7 +273,7 @@ async function executeWithRetry(scriptType, scale, clientId, transactionId, opti
         attempt++;  
           
         try {  
-            const result = await BuiltinScripts[scriptType].script(scale, clientId, transactionId, options);  
+            const result = await BuiltinScripts[scriptType].script(scale, clientId, transactionId, options, session);  
               
             if (verboseErrors && retries > 0) {  
                 print(`Client ${clientId} transaction ${transactionId}: succeeded after ${retries} retries`);  
@@ -558,6 +561,9 @@ class PgBenchMongo {
         } = options;  
           
         const results = [];  
+        const session = null;
+        // if a session is created here, it will be reused. If not a new session is started for each transaction
+        session = db.getMongo().startSession();
         const startTime = new Date();  
         const endTime = duration > 0 ? new Date(startTime.getTime() + duration * 1000) : null;  
         const throttleDelay = rate > 0 ? 1000 / rate : 0;  
@@ -585,7 +591,8 @@ class PgBenchMongo {
                     latencyLimit,  
                     verboseErrors,  
                     seed: options.seed  
-                });  
+                }, 
+                session);  
                   
                 results.push(result);  
                 transactionCount++;  
@@ -806,7 +813,6 @@ class PgBenchMongo {
             print(`latency max = ${maxLatency.toFixed(3)} ms`);  
         }  
           
-        print(`initial connection time = 0.000 ms`);  
         print(`tps = ${tps.toFixed(6)} (without initial connection time)`);  
           
         return {  
